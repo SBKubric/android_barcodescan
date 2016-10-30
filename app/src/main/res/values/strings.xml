@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">BarcodeScan</string>
+    <string name="description_et">Press the button to process the barcode</string>
+    <string name="process_barcode_btn">Process it!</string>
 </resources>

@@ -11,8 +11,27 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.sbkubric.android.barcodescan.MainActivity">
 
-    <TextView
+
+    <TextureView
+        android:id="@+id/camera_feed_tv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/raw_output_et"
+        android:layout_alignParentTop="true"/>
+
+    <EditText
+        android:id="@+id/raw_output_et"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!"/>
+        android:layout_above="@+id/process_barcode_btn"
+        android:layout_centerHorizontal="true"
+        android:hint="@string/description_et"/>
+
+    <Button
+        android:id="@+id/process_barcode_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:text="@string/process_barcode_btn"/>
 </RelativeLayout>
