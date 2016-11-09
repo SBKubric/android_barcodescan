@@ -100,10 +100,10 @@ public class MainActivity extends AppCompatActivity {
         File mediaStorageDir = new File(
                 Environment
                         .getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
-                "MyCameraApp");
+                "BarcodeScan");
         if (!mediaStorageDir.exists()) {
             if (!mediaStorageDir.mkdirs()) {
-                Log.d("MyCameraApp", "failed to create directory");
+                Log.d("BarcodeScan", "failed to create directory");
                 return null;
             }
         }
