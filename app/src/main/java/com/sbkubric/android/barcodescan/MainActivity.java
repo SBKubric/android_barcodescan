@@ -1,18 +1,26 @@
 package com.sbkubric.android.barcodescan;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.hardware.Camera;
 import android.media.ExifInterface;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.Surface;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.hardware.Camera.PictureCallback;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.gms.vision.Frame;
+import com.google.android.gms.vision.barcode.Barcode;
+import com.google.android.gms.vision.barcode.BarcodeDetector;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -21,10 +29,13 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements PictureCallback {
     private Camera mCamera;
     private CameraPreview mCameraPreview;
     private final String TAG = "BarcodeScannerApp";
+    private String mPicturePath;
+    private TextView mRawOutputTv;
+    private MainActivity mMainActivity;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -35,13 +46,41 @@ public class MainActivity extends AppCompatActivity {
         mCameraPreview = new CameraPreview(this, mCamera);
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
         preview.addView(mCameraPreview);
+        mRawOutputTv = (TextView) findViewById(R.id.tv_raw_output);
         Button captureButton = (Button) findViewById(R.id.button_capture);
+        mMainActivity = this;
         captureButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mCamera.takePicture(null, null, mPicture);
+                mCamera.takePicture(null, null, mMainActivity);
+                processPicture();
             }
         });
+    }
+
+    private void processPicture() {
+        Bitmap bitmap = BitmapFactory.decodeFile(mPicturePath);
+        if (bitmap == null) {
+            Toast.makeText(getApplicationContext(), R.string.failed_to_process_the_picture_toast, Toast.LENGTH_SHORT)
+                    .show();
+            return;
+        }
+        BarcodeDetector detector =
+                new BarcodeDetector.Builder(getApplicationContext())
+                        .build();
+        Frame frame = new Frame.Builder().setBitmap(bitmap).build();
+        SparseArray<Barcode> barcodes = detector.detect(frame);
+        if (barcodes.size() == 0) {
+            Toast.makeText(getApplicationContext(), R.string.failed_to_recognize_the_barcode_toast, Toast.LENGTH_SHORT)
+                    .show();
+            return;
+        }
+        Barcode thiscode = barcodes.valueAt(0);
+        mRawOutputTv.setText(thiscode.rawValue);
+        if(!detector.isOperational()){
+            Toast.makeText(getApplicationContext(), R.string.could_not_set_up_detector_toast, Toast.LENGTH_SHORT)
+                    .show();
+        }
     }
 
     private boolean safeCameraOpen(int id) {
@@ -68,33 +107,60 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    PictureCallback mPicture = new PictureCallback() {
-        @Override
-        public void onPictureTaken(byte[] data, Camera camera) {
-            File pictureFile = getOutputMediaFile();
-            if (pictureFile == null) {
-                return;
-            }
-            try {
-                FileOutputStream fos = new FileOutputStream(pictureFile);
-                fos.write(data);
-                fos.close();
-                camera.startPreview();
-            } catch (FileNotFoundException e) {
+//    PictureCallback mMainActivity = new PictureCallback() {
+//        @Override
+//        public void onPictureTaken(byte[] data, Camera camera) {
+//            File pictureFile = getOutputMediaFile();
+//            if (pictureFile == null) {
+//                return;
+//            }
+//            try {
+//                mPicturePath = pictureFile.getAbsolutePath();
+//                FileOutputStream fos = new FileOutputStream(pictureFile);
+//                fos.write(data);
+//                fos.close();
+//                camera.startPreview();
+//            } catch (FileNotFoundException e) {
+//
+//            } catch (IOException e) {
+//            }
+//
+//            try {
+//                ExifInterface exifi = new ExifInterface(pictureFile.getAbsolutePath());
+//                exifi.setAttribute(ExifInterface.TAG_ORIENTATION, String.valueOf(ExifInterface.ORIENTATION_ROTATE_90));
+//                exifi.saveAttributes();
+//            } catch (IOException e) {
+//                Log.e(TAG, "Exif error");
+//            }
+//        }
+//
+//    };
 
-            } catch (IOException e) {
-            }
+    @Override
+    public void onPictureTaken(byte[] data, Camera camera) {
+        File pictureFile = getOutputMediaFile();
+        if (pictureFile == null) {
+            return;
+        }
+        try {
+            mPicturePath = pictureFile.getAbsolutePath();
+            FileOutputStream fos = new FileOutputStream(pictureFile);
+            fos.write(data);
+            fos.close();
+            camera.startPreview();
+        } catch (FileNotFoundException e) {
 
-            try {
-                ExifInterface exifi = new ExifInterface(pictureFile.getAbsolutePath());
-                exifi.setAttribute(ExifInterface.TAG_ORIENTATION, String.valueOf(ExifInterface.ORIENTATION_ROTATE_90));
-                exifi.saveAttributes();
-            } catch (IOException e) {
-                Log.e(TAG, "Exif error");
-            }
+        } catch (IOException e) {
         }
 
-    };
+        try {
+            ExifInterface exifi = new ExifInterface(pictureFile.getAbsolutePath());
+            exifi.setAttribute(ExifInterface.TAG_ORIENTATION, String.valueOf(ExifInterface.ORIENTATION_ROTATE_90));
+            exifi.saveAttributes();
+        } catch (IOException e) {
+            Log.e(TAG, "Exif error");
+        }
+    }
 
     private static File getOutputMediaFile() {
         File mediaStorageDir = new File(
