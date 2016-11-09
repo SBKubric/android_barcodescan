@@ -2,4 +2,8 @@
     <string name="app_name">BarcodeScan</string>
     <string name="description_et">Press the button to process the barcode</string>
     <string name="process_barcode_btn">Process it!</string>
+    <string name="failed_to_set_detector">Could not set up the detector!</string>
+    <string name="failed_to_open_camera_toast">Some app blocked the camera! Closing the app...</string>
+    <string name="tv_raw_output_hint">Press the button to process the barcode</string>
+    <string name="process_btn">Process it!</string>
 </resources>
