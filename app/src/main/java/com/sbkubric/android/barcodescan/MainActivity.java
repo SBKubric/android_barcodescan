@@ -24,18 +24,13 @@ import java.util.Date;
 public class MainActivity extends AppCompatActivity {
     private Camera mCamera;
     private CameraPreview mCameraPreview;
-    private Camera.Parameters mParameters;
     private final String TAG = "BarcodeScannerApp";
 
-    /**
-     * Called when the activity is first created.
-     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         safeCameraOpen(Camera.CameraInfo.CAMERA_FACING_BACK);
-        mParameters = mCamera.getParameters();
         setCameraDisplayOrientation(this, Camera.CameraInfo.CAMERA_FACING_BACK, mCamera);
         mCameraPreview = new CameraPreview(this, mCamera);
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
@@ -56,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
             mCamera = Camera.open(id);
             qOpened = (mCamera != null);
         } catch (Exception e) {
-            Log.e(getString(R.string.app_name), "failed to open Camera");
+            Log.e(getString(R.string.app_name), getString(R.string.failed_to_open_camera_toast));
             Toast.makeText(getApplicationContext(), R.string.failed_to_open_camera_toast, Toast.LENGTH_LONG).show();
             e.printStackTrace();
 
@@ -112,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
                 return null;
             }
         }
-        // Create a media file name
+
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss")
                 .format(new Date());
         File mediaFile;
@@ -165,7 +160,6 @@ public class MainActivity extends AppCompatActivity {
         if (mCamera == null) {
             setContentView(R.layout.activity_main);
             safeCameraOpen(Camera.CameraInfo.CAMERA_FACING_BACK);
-            mParameters = mCamera.getParameters();
             setCameraDisplayOrientation(this, Camera.CameraInfo.CAMERA_FACING_BACK, mCamera);
             mCameraPreview = new CameraPreview(this, mCamera);
             FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);

@@ -17,21 +17,25 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private SurfaceHolder mSurfaceHolder;
     private Camera mCamera;
     private List<Size> mSupportedPreviewSizes;
+    public Size mPreviewSize;
 
-    // Constructor that obtains context and camera
-    @SuppressWarnings("deprecation")
     public CameraPreview(Context context, Camera camera) {
         super(context);
         this.mCamera = camera;
         this.mSurfaceHolder = this.getHolder();
         this.mSurfaceHolder.addCallback(this);
         this.mSurfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+        this.mSupportedPreviewSizes = mCamera.getParameters().getSupportedPreviewSizes();
+
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
         try {
             mCamera.setPreviewDisplay(surfaceHolder);
+            Camera.Parameters parameters = mCamera.getParameters();
+            parameters.setPreviewSize(mPreviewSize.width, mPreviewSize.height);
+            mCamera.setParameters(parameters);
             mCamera.startPreview();
         } catch (IOException e) {
             // left blank for now
@@ -52,9 +56,12 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         // start preview with new settings
         try {
             mCamera.setPreviewDisplay(surfaceHolder);
+            Camera.Parameters parameters = mCamera.getParameters();
+            parameters.setPreviewSize(mPreviewSize.width, mPreviewSize.height);
+            mCamera.setParameters(parameters);
             mCamera.startPreview();
         } catch (Exception e) {
-            // intentionally left blank for a test
+            e.printStackTrace();
         }
     }
 
@@ -76,8 +83,6 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
                 e.printStackTrace();
             }
 
-            // Important: Call startPreview() to start updating the preview
-            // surface. Preview must be started before you can take a picture.
             mCamera.startPreview();
         }
     }
@@ -85,16 +90,55 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private void stopPreviewAndFreeCamera() {
 
         if (mCamera != null) {
-            // Call stopPreview() to stop updating the preview surface.
             mCamera.stopPreview();
-
-            // Important: Call release() to release the camera for use by other
-            // applications. Applications should release the camera immediately
-            // during onPause() and re-open() it during onResume()).
             mCamera.release();
-
             mCamera = null;
         }
     }
+
+    private Camera.Size getOptimalPreviewSize(List<Camera.Size> sizes, int w, int h) {
+        final double ASPECT_TOLERANCE = 0.1;
+        double targetRatio=(double)h / w;
+
+        if (sizes == null) return null;
+
+        Camera.Size optimalSize = null;
+        double minDiff = Double.MAX_VALUE;
+
+        int targetHeight = h;
+
+        for (Camera.Size size : sizes) {
+            double ratio = (double) size.width / size.height;
+            if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE) continue;
+            if (Math.abs(size.height - targetHeight) < minDiff) {
+                optimalSize = size;
+                minDiff = Math.abs(size.height - targetHeight);
+            }
+        }
+
+        if (optimalSize == null) {
+            minDiff = Double.MAX_VALUE;
+            for (Camera.Size size : sizes) {
+                if (Math.abs(size.height - targetHeight) < minDiff) {
+                    optimalSize = size;
+                    minDiff = Math.abs(size.height - targetHeight);
+                }
+            }
+        }
+        return optimalSize;
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        final int width = resolveSize(getSuggestedMinimumWidth(), widthMeasureSpec);
+        final int height = resolveSize(getSuggestedMinimumHeight(), heightMeasureSpec);
+        setMeasuredDimension(width, height);
+
+        if (mSupportedPreviewSizes != null) {
+            mPreviewSize = getOptimalPreviewSize(mSupportedPreviewSizes, width, height);
+        }
+    }
+
+
 
 }
