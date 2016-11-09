@@ -8,11 +8,13 @@ import android.media.ExifInterface;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.InputType;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.Surface;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.hardware.Camera.PictureCallback;
 import android.widget.TextView;
@@ -34,7 +36,7 @@ public class MainActivity extends AppCompatActivity implements PictureCallback {
     private CameraPreview mCameraPreview;
     private final String TAG = "BarcodeScannerApp";
     private File mPictureFile;
-    private TextView mRawOutputTv;
+    private EditText mRawOutputEt;
     private MainActivity mMainActivity;
 
     @Override
@@ -46,13 +48,13 @@ public class MainActivity extends AppCompatActivity implements PictureCallback {
         mCameraPreview = new CameraPreview(this, mCamera);
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
         preview.addView(mCameraPreview);
-        mRawOutputTv = (TextView) findViewById(R.id.tv_raw_output);
+        mRawOutputEt = (EditText) findViewById(R.id.et_raw_output);
         Button captureButton = (Button) findViewById(R.id.button_capture);
         mMainActivity = this;
         captureButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mCamera.takePicture(null, null, mMainActivity);
+                mCamera.takePicture(null, null, mMainActivity); //TODO: Remove mMainActivity
             }
         });
     }
@@ -155,7 +157,8 @@ public class MainActivity extends AppCompatActivity implements PictureCallback {
             return;
         }
         Barcode thiscode = barcodes.valueAt(0);
-        mRawOutputTv.setText(thiscode.rawValue);
+        String rawData = new StringBuilder("Raw data: ").append(thiscode.rawValue).toString();
+        mRawOutputEt.setText(rawData);
         if(!detector.isOperational()){
             Toast.makeText(getApplicationContext(), R.string.could_not_set_up_detector_toast, Toast.LENGTH_SHORT)
                     .show();

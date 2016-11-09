@@ -10,11 +10,13 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-    <TextView
-        android:id="@+id/tv_raw_output"
+    <EditText
+        android:id="@+id/et_raw_output"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:hint="@string/tv_raw_output_hint"
+        android:inputType="none"
+        android:textIsSelectable="true"
         android:layout_gravity="center"/>
 
     <Button
