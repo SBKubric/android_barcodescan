@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity implements PictureCallback {
     private Camera mCamera;
     private CameraPreview mCameraPreview;
     private final String TAG = "BarcodeScannerApp";
-    private String mPicturePath;
+    private File mPictureFile;
     private TextView mRawOutputTv;
     private MainActivity mMainActivity;
 
@@ -53,34 +53,8 @@ public class MainActivity extends AppCompatActivity implements PictureCallback {
             @Override
             public void onClick(View v) {
                 mCamera.takePicture(null, null, mMainActivity);
-                processPicture();
             }
         });
-    }
-
-    private void processPicture() {
-        Bitmap bitmap = BitmapFactory.decodeFile(mPicturePath);
-        if (bitmap == null) {
-            Toast.makeText(getApplicationContext(), R.string.failed_to_process_the_picture_toast, Toast.LENGTH_SHORT)
-                    .show();
-            return;
-        }
-        BarcodeDetector detector =
-                new BarcodeDetector.Builder(getApplicationContext())
-                        .build();
-        Frame frame = new Frame.Builder().setBitmap(bitmap).build();
-        SparseArray<Barcode> barcodes = detector.detect(frame);
-        if (barcodes.size() == 0) {
-            Toast.makeText(getApplicationContext(), R.string.failed_to_recognize_the_barcode_toast, Toast.LENGTH_SHORT)
-                    .show();
-            return;
-        }
-        Barcode thiscode = barcodes.valueAt(0);
-        mRawOutputTv.setText(thiscode.rawValue);
-        if(!detector.isOperational()){
-            Toast.makeText(getApplicationContext(), R.string.could_not_set_up_detector_toast, Toast.LENGTH_SHORT)
-                    .show();
-        }
     }
 
     private boolean safeCameraOpen(int id) {
@@ -138,13 +112,12 @@ public class MainActivity extends AppCompatActivity implements PictureCallback {
 
     @Override
     public void onPictureTaken(byte[] data, Camera camera) {
-        File pictureFile = getOutputMediaFile();
-        if (pictureFile == null) {
+        mPictureFile = getOutputMediaFile();
+        if (mPictureFile == null) {
             return;
         }
         try {
-            mPicturePath = pictureFile.getAbsolutePath();
-            FileOutputStream fos = new FileOutputStream(pictureFile);
+            FileOutputStream fos = new FileOutputStream(mPictureFile);
             fos.write(data);
             fos.close();
             camera.startPreview();
@@ -154,11 +127,38 @@ public class MainActivity extends AppCompatActivity implements PictureCallback {
         }
 
         try {
-            ExifInterface exifi = new ExifInterface(pictureFile.getAbsolutePath());
+            ExifInterface exifi = new ExifInterface(mPictureFile.getAbsolutePath());
             exifi.setAttribute(ExifInterface.TAG_ORIENTATION, String.valueOf(ExifInterface.ORIENTATION_ROTATE_90));
             exifi.saveAttributes();
         } catch (IOException e) {
             Log.e(TAG, "Exif error");
+        }
+        processPicture();
+    }
+
+    private void processPicture() {
+        Bitmap bitmap = BitmapFactory.decodeFile(mPictureFile.getAbsolutePath());
+        if (bitmap == null) {
+            Toast.makeText(getApplicationContext(), R.string.failed_to_process_the_picture_toast, Toast.LENGTH_SHORT)
+                    .show();
+            return;
+        }
+        BarcodeDetector detector =
+                new BarcodeDetector.Builder(getApplicationContext())
+                        .build();
+        Frame frame = new Frame.Builder().setBitmap(bitmap).build();
+        SparseArray<Barcode> barcodes = detector.detect(frame);
+        if (barcodes.size() == 0) {
+            Toast.makeText(getApplicationContext(), R.string.failed_to_recognize_the_barcode_toast, Toast.LENGTH_SHORT)
+                    .show();
+            mPictureFile.delete(); // deletes the bad pictures
+            return;
+        }
+        Barcode thiscode = barcodes.valueAt(0);
+        mRawOutputTv.setText(thiscode.rawValue);
+        if(!detector.isOperational()){
+            Toast.makeText(getApplicationContext(), R.string.could_not_set_up_detector_toast, Toast.LENGTH_SHORT)
+                    .show();
         }
     }
 
@@ -230,6 +230,15 @@ public class MainActivity extends AppCompatActivity implements PictureCallback {
             mCameraPreview = new CameraPreview(this, mCamera);
             FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
             preview.addView(mCameraPreview);
+            Button captureButton = (Button) findViewById(R.id.button_capture);
+            mMainActivity = this;
+            captureButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mCamera.takePicture(null, null, mMainActivity);
+                    processPicture();
+                }
+            });
 
         }
     }
