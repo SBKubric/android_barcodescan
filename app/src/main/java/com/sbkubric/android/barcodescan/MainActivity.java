@@ -8,7 +8,6 @@ import android.media.ExifInterface;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.InputType;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.Surface;
@@ -17,7 +16,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.hardware.Camera.PictureCallback;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.vision.Frame;
